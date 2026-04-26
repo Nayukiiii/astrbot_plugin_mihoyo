@@ -78,6 +78,118 @@ def _fmt_time(seconds: int) -> str:
     return f"{m}分钟"
 
 
+def _seconds(value) -> int:
+    if value is None:
+        return 0
+    if hasattr(value, "total_seconds"):
+        return int(value.total_seconds())
+    return int(value)
+
+
+def _hhmmss(seconds: int) -> str:
+    m, s = divmod(max(0, int(seconds)), 60)
+    h, m = divmod(m, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+
+def _hhmm_cn(seconds: int) -> str:
+    m, _ = divmod(max(0, int(seconds)), 60)
+    h, m = divmod(m, 60)
+    return f"{h:02d}小时{m:02d}分"
+
+
+def _load_rgba(path: Path) -> Image.Image:
+    return Image.open(path).convert("RGBA")
+
+
+async def _render_starrail_notes_starrailuid(notes, uid: str, nickname: str = "") -> bytes:
+    """StarRailUID 风格的崩铁便笺卡。"""
+    note_bg_path = _VENDOR_STAMINA_DIR / "note_bg.png"
+    travel_bg_path = _VENDOR_STAMINA_DIR / "note_travel_bg.png"
+    ring_path = _VENDOR_STAMINA_DIR / "ring.apng"
+    if not note_bg_path.exists():
+        raise FileNotFoundError(f"missing StarRailUID note asset: {note_bg_path}")
+
+    img = _load_rgba(note_bg_path)
+    draw = ImageDraw.Draw(img)
+
+    f_22 = get_font(22)
+    f_18 = get_font(18)
+    f_20 = get_font(20)
+    f_24 = get_font(24)
+    f_26 = get_font(26)
+    f_36 = get_font(36)
+    f_50 = get_font(50)
+
+    first_color = (29, 29, 29)
+    second_color = (98, 98, 98)
+    white_color = (255, 255, 255)
+    red_color = (235, 61, 75)
+
+    stamina = int(getattr(notes, "current_stamina", 0) or 0)
+    max_stamina = int(getattr(notes, "max_stamina", 0) or 0)
+    stamina_percent = stamina / max_stamina if max_stamina else 0
+    recover_sec = _seconds(getattr(notes, "stamina_recover_time", 0))
+    stamina_color = red_color if stamina_percent >= 0.8 else second_color
+
+    if ring_path.exists():
+        try:
+            ring = Image.open(ring_path)
+            percent = min(89, max(0, round(stamina_percent * 89)))
+            ring.seek(percent)
+            ring = ring.convert("RGBA")
+            img.paste(ring, (0, 5), ring)
+        except Exception as e:
+            logger.warning(f"[render/notes] StarRailUID ring 加载失败: {e}")
+
+    draw.text((350, 139), nickname or "开拓者", font=f_36, fill=white_color, anchor="mm")
+    draw.text((350, 190), "崩坏：星穹铁道", font=f_24, fill=white_color, anchor="mm")
+    draw.text((350, 450), f"{stamina}/{max_stamina}", font=f_50, fill=first_color, anchor="mm")
+    draw.text((350, 490), f"还剩{_hhmm_cn(recover_sec)}", font=f_24, fill=stamina_color, anchor="mm")
+    draw.text((350, 663), f"UID{uid}", font=f_26, fill=first_color, anchor="mm")
+
+    reserve = int(getattr(notes, "current_reserve_stamina", 0) or 0)
+    if reserve:
+        draw.text((350, 535), f"备用开拓力 {reserve}", font=f_22, fill=second_color, anchor="mm")
+
+    score_items = [
+        ("每日实训", f"{getattr(notes, 'current_train_score', 0)}/{getattr(notes, 'max_train_score', 500)}"),
+        ("模拟宇宙", f"{getattr(notes, 'current_rogue_score', 0)}/{getattr(notes, 'max_rogue_score', 14000)}"),
+    ]
+    if getattr(notes, "rogue_tourn_weekly_unlocked", False):
+        score_items.append(
+            ("差分宇宙", f"{getattr(notes, 'rogue_tourn_weekly_cur', 0)}/{getattr(notes, 'rogue_tourn_weekly_max', 0)}")
+        )
+    score_xs = (175, 350, 525) if len(score_items) >= 3 else (260, 440)
+    for index, (label, value) in enumerate(score_items):
+        x = score_xs[index]
+        draw.text((x, 694), label, font=f_18, fill=second_color, anchor="mm")
+        draw.text((x, 720), value, font=f_20, fill=first_color, anchor="mm")
+
+    expeditions = list(getattr(notes, "expeditions", None) or [])
+    accepted = int(getattr(notes, "accepted_expedition_num", len(expeditions)) or 0)
+    total = int(getattr(notes, "total_expedition_num", 4) or 4)
+    draw.text((610, 755), f"{accepted}/{total}", font=f_24, fill=first_color, anchor="rm")
+
+    for index in range(4):
+        y = 790 + index * 80
+        if travel_bg_path.exists():
+            travel_bg = _load_rgba(travel_bg_path)
+            img.paste(travel_bg, (0, y), travel_bg)
+        exp = expeditions[index] if index < len(expeditions) else None
+        if exp is None:
+            draw.text((120, y + 40), "等待加入探索队列...", font=f_22, fill=white_color, anchor="lm")
+            continue
+        name = getattr(exp, "name", "委托派遣")
+        remaining = _seconds(getattr(exp, "remaining_time", 0))
+        finished = bool(getattr(exp, "finished", False))
+        status = "待收取" if finished or remaining <= 0 else _hhmmss(remaining)
+        draw.text((120, y + 40), name, font=f_22, fill=white_color, anchor="lm")
+        draw.text((405, y + 40), status, font=f_22, fill=white_color, anchor="mm")
+
+    return convert_img(img.convert("RGB"))
+
+
 # ── 崩铁便笺卡片 ───────────────────────────────────────────────────────────────
 
 async def render_starrail_notes(
@@ -86,6 +198,8 @@ async def render_starrail_notes(
     nickname: str = "",
 ) -> bytes:
     """崩铁便笺 → PNG bytes。"""
+    return await _render_starrail_notes_starrailuid(notes, uid, nickname)
+
     await _ensure_assets()
 
     W, H = 560, 480
