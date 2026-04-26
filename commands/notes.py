@@ -78,6 +78,37 @@ async def cmd_starrail_notes(
                         context=context,
                         unified_msg_origin=event.unified_msg_origin,
                     )
+                elif not getattr(notes, "expeditions", []):
+                    try:
+                        note_data = await sr_with_geetest_retry(
+                            sr_api.get_starrail_notes,
+                            cookie_str=cookie_str,
+                            uid=uid,
+                            captcha_provider=captcha_provider,
+                            ttocr_key=ttocr_key,
+                            capsolver_key=capsolver_key,
+                            geetest_server_url=geetest_server_url,
+                            proxy_url=proxy_url,
+                            login_proxy_url=login_proxy_url,
+                            qq_id=qq_id,
+                            context=context,
+                            unified_msg_origin=event.unified_msg_origin,
+                        )
+                        notes.expeditions = getattr(note_data, "expeditions", [])
+                        notes.accepted_expedition_num = getattr(
+                            note_data, "accepted_expedition_num",
+                            getattr(notes, "accepted_expedition_num", 0),
+                        )
+                        notes.total_expedition_num = getattr(
+                            note_data, "total_expedition_num",
+                            getattr(notes, "total_expedition_num", 4),
+                        )
+                        logger.info(
+                            f"[mihoyo] 崩铁便笺已从 note 补齐委托: "
+                            f"{len(notes.expeditions)}/{notes.total_expedition_num}"
+                        )
+                    except Exception as e:
+                        logger.warning(f"[mihoyo] 崩铁便笺 note 补齐委托失败，沿用 widget: {e}")
 
             cache_set(qq_id, "starrail_notes", notes, TTL_NOTES)
 
