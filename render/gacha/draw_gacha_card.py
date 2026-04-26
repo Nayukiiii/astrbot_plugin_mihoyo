@@ -6,6 +6,7 @@ render/gacha/draw_gacha_card.py
 from pathlib import Path
 from PIL import Image, ImageDraw
 
+from ..starrailuid_assets import first_existing, vendor_texture
 from ..base_card import (
     WHITE, GRAY, convert_img,
     SR_ACCENT, SR_BG_TOP, SR_BG_BOT,
@@ -16,6 +17,7 @@ from ..fonts.starrail_fonts import get_font
 
 _TEXTURE_DIR = Path(__file__).parent / "texture2D"
 _TEXTURE_DIR.mkdir(exist_ok=True)
+_VENDOR_GACHA_DIR = vendor_texture("starrailuid_gachalog", "texture2d")
 
 POOL_DISPLAY = {
     "genshin":  {
@@ -41,6 +43,16 @@ async def render_gacha_card(
 
     W, H = 600, 520
     img = create_gradient_bg(W, H, bg_top, bg_bot)
+    bg_path = first_existing(
+        _VENDOR_GACHA_DIR / ("Abg3.png" if is_sr else "Abg1.png"),
+        _TEXTURE_DIR / "bg.png",
+    )
+    if bg_path:
+        try:
+            bg = Image.open(bg_path).convert("RGB").resize((W, H))
+            img.paste(bg, (0, 0))
+        except Exception:
+            pass
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ov = ImageDraw.Draw(overlay)
     draw_rounded_rect(ov, (16, 16, W - 16, H - 16), radius=16, fill=(20, 20, 35, 200))

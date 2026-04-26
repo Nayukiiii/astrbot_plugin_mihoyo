@@ -18,6 +18,7 @@ import aiohttp
 from PIL import Image, ImageDraw
 from astrbot.api import logger
 
+from ..starrailuid_assets import first_existing, vendor_texture
 from ..base_card import (
     WHITE, GRAY, convert_img,
     SR_PURPLE, SR_ACCENT, SR_BG_TOP, SR_BG_BOT,
@@ -29,6 +30,8 @@ from ..fonts.starrail_fonts import get_font
 
 _TEXTURE_DIR = Path(__file__).parent / "texture2D"
 _TEXTURE_DIR.mkdir(exist_ok=True)
+_VENDOR_NOTE_DIR = vendor_texture("starrailuid_note", "texture2d")
+_VENDOR_STAMINA_DIR = vendor_texture("starrailuid_stamina")
 
 # StarRailUID 资源 CDN（便笺模块）
 _ASSET_BASE = (
@@ -39,6 +42,8 @@ _REQUIRED_ASSETS = ["bg.jpg", "head.png"]
 
 
 async def _ensure_assets():
+    if _VENDOR_NOTE_DIR.exists() or _VENDOR_STAMINA_DIR.exists():
+        return
     """静默下载缺失的 texture2D 资源（首次使用时调用）。"""
     missing = [f for f in _REQUIRED_ASSETS if not (_TEXTURE_DIR / f).exists()]
     if not missing:
@@ -88,8 +93,12 @@ async def render_starrail_notes(
     draw = ImageDraw.Draw(img)
 
     # 尝试加载背景
-    bg_path = _TEXTURE_DIR / "bg.jpg"
-    if bg_path.exists():
+    bg_path = first_existing(
+        _VENDOR_STAMINA_DIR / "note_bg.png",
+        _VENDOR_NOTE_DIR / "monthly_bg.png",
+        _TEXTURE_DIR / "bg.jpg",
+    )
+    if bg_path and bg_path.exists():
         try:
             bg = Image.open(bg_path).convert("RGB").resize((W, H))
             img.paste(bg, (0, 0))

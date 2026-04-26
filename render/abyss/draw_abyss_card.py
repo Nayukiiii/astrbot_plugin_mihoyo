@@ -16,6 +16,7 @@ import aiohttp
 from PIL import Image, ImageDraw
 from astrbot.api import logger
 
+from ..starrailuid_assets import first_existing, vendor_texture
 from ..base_card import (
     WHITE, GRAY, BLACK, convert_img,
     SR_PURPLE, SR_ACCENT, SR_BG_TOP, SR_BG_BOT,
@@ -27,6 +28,7 @@ from ..fonts.starrail_fonts import get_font
 # ── 资源路径 ──────────────────────────────────────────────────────────────────
 _TEXTURE_DIR = Path(__file__).parent / "texture2D"
 _TEXTURE_DIR.mkdir(exist_ok=True)
+_VENDOR_TEXTURE_DIR = vendor_texture("starrailuid_abyss_boss")
 
 _SR_ABYSS_BASE = (
     "https://raw.githubusercontent.com/baiqwerdvd/StarRailUID/"
@@ -36,6 +38,8 @@ _SR_REQUIRED = ["bg.jpg", "floor_bg.png", "star.png", "star_gray.png"]
 
 
 async def _ensure_sr_assets():
+    if _VENDOR_TEXTURE_DIR.exists():
+        return
     missing = [f for f in _SR_REQUIRED if not (_TEXTURE_DIR / f).exists()]
     if not missing:
         return
@@ -60,8 +64,8 @@ async def _ensure_sr_assets():
 
 
 def _load(name: str, fallback_size=(900, 100)):
-    p = _TEXTURE_DIR / name
-    if p.exists():
+    p = first_existing(_VENDOR_TEXTURE_DIR / name, _TEXTURE_DIR / name)
+    if p and p.exists():
         try:
             return Image.open(p).convert("RGBA")
         except Exception:
@@ -101,8 +105,8 @@ def _draw_endgame(
     f_tiny  = get_font(18)
 
     # 尝试背景图
-    bg_path = _TEXTURE_DIR / "bg.jpg"
-    if bg_path.exists():
+    bg_path = first_existing(_VENDOR_TEXTURE_DIR / "bg.jpg", _TEXTURE_DIR / "bg.jpg")
+    if bg_path and bg_path.exists():
         try:
             bg = Image.open(bg_path).convert("RGB").resize((W, H))
             img.paste(bg, (0, 0))
