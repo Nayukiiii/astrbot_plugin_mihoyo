@@ -267,14 +267,15 @@ async def with_geetest_retry(
     if not cookie_str:
         raise RuntimeError("cookie 为空，无法进行极验过码")
 
-    challenge = await _do_geetest(
+    geetest_result = await _do_geetest(
         cookie_str, captcha_provider, ttocr_key, capsolver_key,
         geetest_server_url, proxy_url, context, unified_msg_origin
     )
 
-    if not challenge:
+    if not geetest_result:
         raise RuntimeError("极验过码失败，请稍后重试")
 
+    challenge = geetest_result[0] if isinstance(geetest_result, tuple) else geetest_result
     logger.info(f"[mihoyo] 极验过码成功，challenge={challenge[:8]}...，正在重试...")
     client.custom_headers = {"x-rpc-challenge": challenge}
     try:
