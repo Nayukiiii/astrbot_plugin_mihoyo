@@ -1,0 +1,81 @@
+{
+  "proxy": {
+    "description": "代理设置",
+    "type": "object",
+    "hint": "登录和极验过码需要走中国大陆住宅 IP，否则米游社会拒绝请求",
+    "items": {
+      "login_proxy_url": {
+        "description": "登录代理",
+        "type": "string",
+        "hint": "发送验证码、验证登录时使用的 SOCKS5 代理，必须是中国大陆住宅 IP。格式：socks5://用户名:密码@host:port",
+        "default": ""
+      },
+      "geetest_proxy_url": {
+        "description": "极验代理",
+        "type": "string",
+        "hint": "createVerification 和 verifyVerification 两步使用的代理，建议与登录代理填相同地址。留空则直连",
+        "default": ""
+      }
+    }
+  },
+  "captcha": {
+    "description": "极验打码设置",
+    "type": "object",
+    "hint": "触发极验验证码（error 1034）时自动识别，留空则触发时直接报错",
+    "items": {
+      "provider": {
+        "description": "打码服务商",
+        "type": "string",
+        "hint": "选择极验验证码处理方式。ttocr：自动打码（按点计费，图标点选10点/次）；capsolver：自动打码（按次计费，$2.99/1000次）；manual：发二维码给用户手动完成验证",
+        "options": [
+          "ttocr",
+          "capsolver",
+          "manual"
+        ],
+        "default": "ttocr"
+      },
+      "ttocr_appkey": {
+        "description": "ttocr AppKey",
+        "type": "string",
+        "hint": "服务商选 ttocr 时填写。获取地址：http://www.ttocr.com",
+        "default": ""
+      },
+      "capsolver_apikey": {
+        "description": "CapSolver API Key",
+        "type": "string",
+        "hint": "服务商选 capsolver 时填写。获取地址：https://capsolver.com",
+        "default": ""
+      },
+      "geetest_server_url": {
+        "description": "人工验证服务地址",
+        "type": "string",
+        "hint": "仅 provider=manual 时使用。部署 geetest_server.py 后填入其访问地址",
+        "default": "https://geetest.utautai.org"
+      }
+    }
+  },
+  "login": {
+    "description": "登录设置",
+    "type": "object",
+    "items": {
+      "max_wait": {
+        "description": "验证码等待超时（秒）",
+        "type": "int",
+        "hint": "发送手机验证码后等待用户输入的最大秒数，超时后登录流程自动取消",
+        "default": 300
+      }
+    }
+  },
+  "gacha": {
+    "description": "抽卡同步设置",
+    "type": "object",
+    "items": {
+      "sync_limit": {
+        "description": "单次同步最大页数",
+        "type": "int",
+        "hint": "每次同步单个池子的最大页数（每页 20 条），0 表示不限制全量同步",
+        "default": 0
+      }
+    }
+  }
+}
