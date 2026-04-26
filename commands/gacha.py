@@ -7,17 +7,43 @@ from astrbot.api.event import AstrMessageEvent
 from astrbot.api import logger
 
 from ..db import users as user_db
+from ..db.database import get_conn
 from ..db.gacha_sync import sync_gacha
 from ..render.gacha.draw_gacha_card import render_gacha_card
 from ..utils.image import save_image_bytes
 from ..utils.cache import get as cache_get, set as cache_set, TTL_ABYSS
 
-# authkey 临时缓存（会话内共享，不写 DB）
+# authkey 内存缓存，持久副本写入 sqlite，避免插件重载后丢失
 _authkey_cache: dict[str, dict[str, str]] = {}  # qq_id -> {game: authkey}
 
 
 def get_cached_authkey(qq_id: str, game: str) -> str | None:
     return _authkey_cache.get(qq_id, {}).get(game)
+
+
+def get_stored_authkey(qq_id: str, game: str) -> str | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT authkey FROM gacha_authkeys WHERE qq_id=? AND game=?",
+            (qq_id, game),
+        ).fetchone()
+    return row["authkey"] if row else None
+
+
+def save_authkey(qq_id: str, game: str, authkey: str) -> None:
+    from datetime import datetime
+
+    save_authkey(qq_id, game, authkey)
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO gacha_authkeys (qq_id, game, authkey, updated_at)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT(qq_id, game) DO UPDATE SET
+                   authkey=excluded.authkey,
+                   updated_at=excluded.updated_at""",
+            (qq_id, game, authkey, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        )
 
 
 POOL_NAMES = {
@@ -63,7 +89,7 @@ async def cmd_gacha_authkey(
 
     game_name = "原神" if game == "genshin" else "崩铁"
     yield event.plain_result(
-        f"✅ {game_name} authkey 已缓存（本次会话有效）\n"
+        f"✅ {game_name} authkey 已保存\n"
         f"现在可以使用 /{'原' if game == 'genshin' else '崩'} 抽卡 <池子> 查询记录"
     )
 
@@ -98,6 +124,15 @@ async def cmd_gacha(
     yield event.plain_result("⏳ 同步抽卡记录中，请稍候...")
 
     try:
+        if not authkey:
+            authkey = get_stored_authkey(qq_id, game)
+        if not authkey:
+            cmd = "原" if game == "genshin" else "崩"
+            yield event.plain_result(
+                f"缺少抽卡 authkey，请先发送：/{cmd} 抽卡 链接 <游戏内抽卡记录链接>"
+            )
+            return
+
         new_count = await sync_gacha(
             qq_id, game, pool_type,
             authkey=authkey,

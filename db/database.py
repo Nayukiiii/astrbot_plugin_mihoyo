@@ -62,6 +62,15 @@ def init_db(data_dir: str) -> None:
             last_sync_at    TEXT,
             PRIMARY KEY (qq_id, game, pool_type)
         );
+
+        -- 抽卡 authkey（从用户提供的抽卡链接提取，避免插件重载后丢失）
+        CREATE TABLE IF NOT EXISTS gacha_authkeys (
+            qq_id           TEXT,
+            game            TEXT,
+            authkey         TEXT,
+            updated_at      TEXT,
+            PRIMARY KEY (qq_id, game)
+        );
         """)
     logger.info(f"[mihoyo] 数据库初始化完成: {_DB_PATH}")
 

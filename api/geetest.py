@@ -26,6 +26,8 @@ from typing import Optional, Tuple
 import aiohttp
 from astrbot.api import logger
 
+from .base import RECORD_HEADERS
+
 try:
     from aiohttp_socks import ProxyConnector, ProxyType
 except ImportError:
@@ -49,8 +51,10 @@ _TTOCR_SUBMIT = "http://api.ttocr.com/api/recognize"
 _TTOCR_RESULT = "http://api.ttocr.com/api/results"
 _TTOCR_ITEMID = 31   # geetest 滑块专用（经过实测确认）
 
-_DEVICE_ID = str(uuid.uuid4())
-_DEVICE_FP = "".join(random.choices(string.digits, k=13))
+# 极验 create/verify 与后续 game_record 查询要保持同一设备标识。
+# 否则 verifyVerification 返回 OK 后，战绩接口仍可能继续 10041。
+_DEVICE_ID = RECORD_HEADERS["x-rpc-device_id"]
+_DEVICE_FP = RECORD_HEADERS["x-rpc-device_fp"]
 _LIFECYCLE_ID = str(uuid.uuid4())  # APP 启动时生成一次，会话内固定
 _DEVICE_NAME  = "Xiaomi 2309DRA50C"
 _DEVICE_MODEL = "2309DRA50C"

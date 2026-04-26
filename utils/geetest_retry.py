@@ -210,15 +210,30 @@ async def sr_with_geetest_retry(
             logger.info(f"[mihoyo][debug] cookie_jar dump failed: {_e}")
 
         logger.info(f"[mihoyo] 极验过码成功，challenge={challenge[:8]}...，正在重试...")
+
+        try:
+            return await api_func(
+                uid, cookie_str, challenge=challenge, proxy_url="",
+                session=shared_session, **kwargs,
+            )
+        except GeetestNeeded as first_retry_error:
+            if not validate:
+                raise first_retry_error
+            logger.warning(
+                "[mihoyo] 仅 challenge 重试仍触发极验，尝试附加 validate 头"
+            )
+
         extra = {
             "x-rpc-challenge_game": "6",
             "x-rpc-page":           "v1.4.1-rpg_#/rpg",
             "x-rpc-tool-verison":   "v1.4.1-rpg",
+            "x-rpc-geetest_validate": validate,
+            "x-rpc-seccode":          f"{validate}|jordan",
         }
-        if validate:
-            extra["x-rpc-geetest_validate"] = validate
-            extra["x-rpc-seccode"]          = f"{validate}|jordan"
-        return await api_func(uid, cookie_str, challenge=challenge, proxy_url="", session=shared_session, extra_headers=extra, **kwargs)
+        return await api_func(
+            uid, cookie_str, challenge=challenge, proxy_url="",
+            session=shared_session, extra_headers=extra, **kwargs,
+        )
 
 
 async def with_geetest_retry(
