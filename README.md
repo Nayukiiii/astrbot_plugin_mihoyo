@@ -9,21 +9,47 @@
 
 ## 功能
 
+### 崩坏：星穹铁道
+
+| 指令 | 内容 | 说明 |
+|------|------|------|
+| `/崩 便笺` | 开拓力 / 后备开拓力 / 每日实训 / 模拟宇宙 | 优先使用 Widget 接口，失败时回退到实时便笺接口 |
+| `/崩 签到` | 每日签到 | 支持米游社签到 |
+| `/崩 忘却 [上期]` | 忘却之庭 | 支持本期 / 上期战绩卡 |
+| `/崩 虚构 [上期]` | 虚构叙事 | 支持本期 / 上期战绩卡 |
+| `/崩 末日 [上期]` | 末日幻影 | 支持本期 / 上期战绩卡，`/崩 差分` 作为兼容别名保留 |
+| `/崩 抽卡 角色\|光锥\|常驻\|新手` | 跃迁统计 | 通过游戏内抽卡记录链接导入 authkey 后查询 |
+| `/崩 抽卡 链接 <URL>` | 记录抽卡 authkey | 保存后可直接查询对应卡池 |
+
+### 原神
+
+| 指令 | 内容 | 说明 |
+|------|------|------|
+| `/原 便笺` | 原粹树脂 / 每日委托 / 洞天宝钱 / 质变仪 / 探索派遣 | 使用 genshin.py 路径 |
+| `/原 签到` | 每日签到 | 支持米游社签到 |
+| `/原 深渊 [上期]` | 深境螺旋 | 支持本期 / 上期战绩卡 |
+| `/原 抽卡 角色\|武器\|常驻\|新手` | 祈愿统计 | 通过游戏内抽卡记录链接导入 authkey 后查询 |
+| `/原 抽卡 链接 <URL>` | 记录抽卡 authkey | 保存后可直接查询对应卡池 |
+
+### 账号
+
 | 指令 | 说明 |
 |------|------|
-| `/崩 便笺` | 开拓力 / 每日实训 / 模拟宇宙 / 委托派遣 |
-| `/崩 签到` | HoYoLAB 每日签到 |
-| `/崩 忘却 [上期]` | 忘却之庭 |
-| `/崩 虚构 [上期]` | 虚构叙事 |
-| `/崩 差分 [上期]` | 差分宇宙 |
-| `/崩 抽卡 角色\|光锥\|常驻\|新手` | 跃迁统计 |
-| `/原 便笺` | 原粹树脂 / 委托 / 洞天宝钱 / 质变仪 |
-| `/原 签到` | HoYoLAB 每日签到 |
-| `/原 深渊 [上期]` | 深境螺旋 |
-| `/原 抽卡 角色\|武器\|常驻\|新手` | 祈愿统计 |
 | `/米 登录` | 绑定米游社账号（手机验证码） |
+| `/米 验证` | 完成验证码登录流程 |
 | `/米 解绑` | 解除绑定 |
 | `/米 账号` | 查看已绑定信息 |
+
+### 开发中
+
+以下模块已具备 StarRailUID 风格渲染层，后续会继续接入 API 与指令：
+
+- `/崩 异相`：异相仲裁
+- `/崩 货币战争`
+- `/崩 模拟宇宙`
+- `/崩 蝗灾`：寰宇蝗灾
+- `/崩 月报` / `/崩 阅历`
+- `/崩 角色`
 
 ---
 
@@ -36,7 +62,7 @@ cd astrbot_plugin_mihoyo
 pip install -r requirements.txt
 ```
 
-渲染卡片所需的图像资源（来自 [StarRailUID](https://github.com/baiqwerdvd/StarRailUID)）会在首次使用时自动从 GitHub 下载，无需手动操作。如果网络受限，可参考下方「手动下载资源」说明。
+渲染卡片所需的图像资源来自 [StarRailUID](https://github.com/baiqwerdvd/StarRailUID)，仓库内已保留常用资源。若部署环境缺少部分资源，可参考下方「手动下载资源」说明补齐。
 
 ---
 
@@ -78,7 +104,7 @@ gacha:
 
 ## 资源声明
 
-卡片渲染资源（`render/*/texture2D/`）来自 [baiqwerdvd/StarRailUID](https://github.com/baiqwerdvd/StarRailUID)，遵循 **GPL-3.0 License**。
+卡片渲染资源（`render/starrailuid_vendor/*/texture2D/`）来自 [baiqwerdvd/StarRailUID](https://github.com/baiqwerdvd/StarRailUID)，遵循 **GPL-3.0 License**。
 
 本项目同样以 **GPL-3.0** 协议开源。
 
@@ -88,10 +114,16 @@ gacha:
 
 如果自动下载失败，可手动从以下链接下载资源文件：
 
-- 便笺资源：`StarRailUID/starrailuid_note/texture2D/`
-- 深渊资源：`StarRailUID/starrailuid_abyss_boss/texture2D/`
+- 崩铁便笺：`StarRailUID/starrailuid_stamina/texture2D/`
+- 崩铁忘却之庭：`StarRailUID/starrailuid_abyss/texture2D/`
+- 崩铁虚构叙事：`StarRailUID/starrailuid_abyss_story/texture2D/`
+- 崩铁末日幻影：`StarRailUID/starrailuid_abyss_boss/texture2D/`
+- 崩铁异相仲裁：`StarRailUID/starrailuid_abyss_peak/texture2D/`
+- 崩铁模拟宇宙：`StarRailUID/starrailuid_rogue/texture2D/`
+- 崩铁货币战争：`StarRailUID/starrailuid_grid_fight/texture2D/`
+- 崩铁月报：`StarRailUID/starrailuid_note/texture2D/`
 
-下载后放入对应的 `render/notes/texture2D/` 和 `render/abyss/texture2D/` 目录。
+下载后放入对应的 `render/starrailuid_vendor/<模块名>/texture2D/` 目录。
 
 ---
 
