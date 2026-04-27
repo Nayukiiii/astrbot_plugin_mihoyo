@@ -283,6 +283,33 @@ async def get_challenge_peak(
     return _wrap_sr_endgame(data["data"])
 
 
+# ── 货币战争 ─────────────────────────────────────────────────────────────────
+
+async def get_grid_fight(
+    uid: str,
+    cookie: str,
+    challenge: str = "",
+    proxy_url: str = "",
+    extra_headers: dict = None,
+    session=None,
+) -> SimpleNamespace:
+    params = {
+        "role_id": uid,
+        "server": _recognize_server(uid),
+    }
+    data = await mys_get(
+        _BASE + "/grid_fight", params, cookie,
+        challenge=challenge, proxy_url=proxy_url,
+        extra_headers=extra_headers, session=session,
+    )
+    retcode = data.get("retcode", -1)
+    if is_geetest_triggered(data):
+        raise _GeetestNeeded(retcode)
+    if retcode != 0:
+        raise RuntimeError(f"货币战争查询失败: retcode={retcode} msg={data.get('message')}")
+    return _wrap_obj(data["data"])
+
+
 # ── 角色信息 ─────────────────────────────────────────────────────────────────
 
 async def get_role_basic_info(
@@ -307,6 +334,14 @@ class _GeetestNeeded(Exception):
     def __init__(self, retcode: int = 1034):
         self.retcode = retcode
         super().__init__(f"geetest needed (retcode={retcode})")
+
+
+def _wrap_obj(value):
+    if isinstance(value, dict):
+        return _ns(**{key: _wrap_obj(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return [_wrap_obj(item) for item in value]
+    return value
 
 
 def _wrap_sr_endgame(d: dict) -> SimpleNamespace:

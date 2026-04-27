@@ -14,6 +14,7 @@ from ..render.genshin import render_spiral_abyss
 from ..render.starrail import (
     render_apocalyptic_shadow,
     render_forgotten_hall,
+    render_grid_fight_card,
     render_pure_fiction,
 )
 from ..utils.geetest_retry import with_geetest_retry, sr_with_geetest_retry
@@ -247,4 +248,64 @@ async def cmd_apocalyptic_shadow(
         yield event.plain_result(str(e))
     except Exception as e:
         logger.error(f"[mihoyo] 末日幻影查询失败: {e}")
+        yield event.plain_result(f"查询失败：{e}")
+
+
+async def cmd_grid_fight(
+    event: AstrMessageEvent,
+    ttocr_key: str = "",
+    captcha_provider: str = "manual",
+    capsolver_key: str = "",
+    geetest_server_url: str = "",
+    proxy_url: str = "",
+    login_proxy_url: str = "",
+    unified_msg_origin: str = "",
+    context=None,
+):
+    """/崩 货币战争"""
+    qq_id = str(event.get_sender_id())
+    uid = user_db.get_starrail_uid(qq_id)
+    if not uid:
+        yield event.plain_result("请先绑定账号（/米 登录），或您的崩铁账号未检测到 UID")
+        return
+
+    cache_key = "grid_fight"
+    cached = cache_get(qq_id, cache_key)
+
+    if cached:
+        yield event.plain_result("⏳ 渲染货币战争中（缓存）...")
+        data = cached
+    else:
+        yield event.plain_result("⏳ 查询货币战争中，请稍候...")
+
+    try:
+        cookie_str = user_db.get_cookie_str(qq_id) or ""
+        if not cached:
+            async with slow_hint(context, event.unified_msg_origin):
+                data = await sr_with_geetest_retry(
+                    sr_api.get_grid_fight,
+                    cookie_str=cookie_str, uid=uid,
+                    captcha_provider=captcha_provider, ttocr_key=ttocr_key,
+                    capsolver_key=capsolver_key, geetest_server_url=geetest_server_url,
+                    proxy_url=proxy_url, login_proxy_url=login_proxy_url,
+                    qq_id=qq_id, context=context,
+                    unified_msg_origin=event.unified_msg_origin,
+                )
+            cache_set(qq_id, cache_key, data, TTL_ABYSS)
+
+        nickname = ""
+        if cookie_str:
+            try:
+                profile = await sr_api.get_role_basic_info(uid, cookie_str, proxy_url=proxy_url)
+                nickname = getattr(profile, "nickname", "")
+            except Exception as e:
+                logger.warning(f"[mihoyo] 货币战争昵称获取失败，使用 UID 渲染: {e}")
+
+        img = await render_grid_fight_card(data, uid, nickname)
+        yield event.image_result(save_image_bytes(img))
+
+    except RuntimeError as e:
+        yield event.plain_result(str(e))
+    except Exception as e:
+        logger.error(f"[mihoyo] 货币战争查询失败: {e}")
         yield event.plain_result(f"查询失败：{e}")

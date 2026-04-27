@@ -21,6 +21,7 @@ from .commands.abyss import (
     cmd_forgotten_hall,
     cmd_pure_fiction,
     cmd_apocalyptic_shadow,
+    cmd_grid_fight,
 )
 
 
@@ -145,7 +146,7 @@ class MihoyoPlugin(Star):
 
     @filter.command("崩")
     async def handle_sr(self, event: AstrMessageEvent):
-        """/崩 便笺 | 签到 | 忘却 [上期] | 虚构 [上期] | 末日 [上期] | 抽卡 <池子>"""
+        """/崩 便笺 | 签到 | 忘却 [上期] | 虚构 [上期] | 末日 [上期] | 货币战争 | 抽卡 <池子>"""
         args = self._args(event, prefix="崩")
         if not args:
             yield event.plain_result(self._sr_help())
@@ -173,6 +174,9 @@ class MihoyoPlugin(Star):
             previous = len(args) > 1 and args[1] == "上期"
             async for r in cmd_apocalyptic_shadow(event, previous=previous,
                                                   unified_msg_origin=event.unified_msg_origin, **gk):
+                yield r
+        elif sub in ("货币战争", "战争", "hbzz", "查询货币战争"):
+            async for r in cmd_grid_fight(event, unified_msg_origin=event.unified_msg_origin, **gk):
                 yield r
         elif sub in ("抽卡", "gacha", "warp"):
             if len(args) < 2:
@@ -231,6 +235,7 @@ class MihoyoPlugin(Star):
             "/崩 忘却 [上期]\n"
             "/崩 虚构 [上期]\n"
             "/崩 末日 [上期]\n"
+            "/崩 货币战争（别名：战争 / hbzz）\n"
             "/崩 抽卡 角色|光锥|常驻|新手\n"
             "/崩 抽卡 链接 <URL>"
         )
