@@ -145,7 +145,7 @@ class MihoyoPlugin(Star):
 
     @filter.command("崩")
     async def handle_sr(self, event: AstrMessageEvent):
-        """/崩 便笺 | 签到 | 忘却 [上期] | 虚构 [上期] | 差分 [上期] | 抽卡 <池子>"""
+        """/崩 便笺 | 签到 | 忘却 [上期] | 虚构 [上期] | 末日 [上期] | 抽卡 <池子>"""
         args = self._args(event, prefix="崩")
         if not args:
             yield event.plain_result(self._sr_help())
@@ -169,7 +169,7 @@ class MihoyoPlugin(Star):
             async for r in cmd_pure_fiction(event, previous=previous,
                                             unified_msg_origin=event.unified_msg_origin, **gk):
                 yield r
-        elif sub in ("差分",):
+        elif sub in ("末日", "差分"):
             previous = len(args) > 1 and args[1] == "上期"
             async for r in cmd_apocalyptic_shadow(event, previous=previous,
                                                   unified_msg_origin=event.unified_msg_origin, **gk):
@@ -226,11 +226,11 @@ class MihoyoPlugin(Star):
     def _sr_help(self) -> str:
         return (
             "崩铁指令：\n"
-            "/崩 便笺 — 开拓力/每日/派遣\n"
+            "/崩 便笺 — 开拓力/每日/模拟宇宙\n"
             "/崩 签到\n"
             "/崩 忘却 [上期]\n"
             "/崩 虚构 [上期]\n"
-            "/崩 差分 [上期]\n"
+            "/崩 末日 [上期]\n"
             "/崩 抽卡 角色|光锥|常驻|新手\n"
             "/崩 抽卡 链接 <URL>"
         )

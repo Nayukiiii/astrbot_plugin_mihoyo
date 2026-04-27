@@ -9,7 +9,7 @@ from astrbot.api import logger
 from ..db import users as user_db
 from ..db.database import get_conn
 from ..db.gacha_sync import sync_gacha
-from ..render.gacha.draw_gacha_card import render_gacha_card
+from ..render.common_gacha import render_gacha_card
 from ..utils.image import save_image_bytes
 from ..utils.cache import get as cache_get, set as cache_set, TTL_ABYSS
 

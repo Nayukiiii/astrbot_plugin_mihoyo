@@ -1,6 +1,6 @@
 """
 commands/abyss.py
-/原 深渊 / /崩 忘却 / /崩 虚构 / /崩 差分
+/原 深渊 / /崩 忘却 / /崩 虚构 / /崩 末日
 """
 
 import genshin
@@ -10,11 +10,11 @@ from astrbot.api import logger
 from ..utils.client import create_client
 from ..db import users as user_db
 from ..api import starrail as sr_api
-from ..render.abyss.draw_abyss_card import (
-    render_spiral_abyss,
+from ..render.genshin import render_spiral_abyss
+from ..render.starrail import (
+    render_apocalyptic_shadow,
     render_forgotten_hall,
     render_pure_fiction,
-    render_apocalyptic_shadow,
 )
 from ..utils.geetest_retry import with_geetest_retry, sr_with_geetest_retry
 from ..utils.cache import get as cache_get, set as cache_set, TTL_ABYSS
@@ -208,7 +208,7 @@ async def cmd_apocalyptic_shadow(
     unified_msg_origin: str = "",
     context=None,
 ):
-    """/崩 差分 [上期]"""
+    """/崩 末日 [上期]"""
     qq_id = str(event.get_sender_id())
     uid = user_db.get_starrail_uid(qq_id)
     if not uid:
@@ -220,10 +220,10 @@ async def cmd_apocalyptic_shadow(
     cached = cache_get(qq_id, cache_key)
 
     if cached:
-        yield event.plain_result(f"⏳ 渲染{period}差分宇宙中（缓存）...")
+        yield event.plain_result(f"⏳ 渲染{period}末日幻影中（缓存）...")
         data = cached
     else:
-        yield event.plain_result(f"⏳ 查询{period}差分宇宙，请稍候...")
+        yield event.plain_result(f"⏳ 查询{period}末日幻影，请稍候...")
 
     try:
         if not cached:
@@ -246,5 +246,5 @@ async def cmd_apocalyptic_shadow(
     except RuntimeError as e:
         yield event.plain_result(str(e))
     except Exception as e:
-        logger.error(f"[mihoyo] 差分宇宙查询失败: {e}")
+        logger.error(f"[mihoyo] 末日幻影查询失败: {e}")
         yield event.plain_result(f"查询失败：{e}")
