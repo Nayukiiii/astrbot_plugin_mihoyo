@@ -21,6 +21,7 @@ from .common import (
     stat_cell,
     text_fit,
 )
+from .grid_fight import render_grid_fight_card
 
 
 async def render_monthly_award(data, uid: str, nickname: str = "") -> bytes:
@@ -130,36 +131,6 @@ async def render_rogue_locust_card(data, uid: str) -> bytes:
         text_fit(draw, (72, y + 24), str(getv(rec, "name", "记录")), 28, FIRST, 420)
         draw.text((72, y + 72), f"难度 {getv(rec, 'difficulty', 0)} · 位面 {len(listv(getv(rec, 'blocks', [])))}", font=get_font(22), fill=SECOND)
         draw.text((832, y + 28), date_text(getv(rec, "finish_time", None)), font=get_font(18), fill=MUTED, anchor="ra")
-        y += 170
-    return convert_img(img)
-
-
-async def render_grid_fight_card(data, uid: str, nickname: str = "") -> bytes:
-    brief = getv(data, "grid_fight_brief", None)
-    archives = listv(getv(data, "grid_fight_archive_list", []))
-    img = base_canvas(900, 680 + max(0, len(archives) - 1) * 170, sr_texture("starrailuid_grid_fight", "bg.jpg"))
-    paste_panel(img, (34, 34, 866, 250), radius=20, fill=(22, 22, 34, 190))
-    draw = ImageDraw.Draw(img)
-    draw.text((64, 64), "货币战争", font=get_font(42), fill=GOLD)
-    draw.text((64, 122), nickname or f"UID {uid}", font=get_font(24), fill=WHITE)
-    if brief:
-        draw.text((64, 172), f"赛季等级 {getv(brief, 'season_level', '--')} · 周分 {getv(brief, 'weekly_score_cur', 0)}/{getv(brief, 'weekly_score_max', 0)}", font=get_font(22), fill=GRAY)
-        division = getv(brief, "division", None)
-        if division:
-            draw.text((832, 122), str(getv(division, "name_with_num", getv(division, "name", ""))), font=get_font(26), fill=GOLD, anchor="ra")
-    if not bool(getv(brief, "has_played", bool(archives))):
-        paste_panel(img, (70, 330, 830, 560), radius=20, fill=(255, 255, 255, 220))
-        draw.text((450, 430), "暂无货币战争数据", font=get_font(30), fill=FIRST, anchor="mm")
-        return convert_img(img)
-    y = 300
-    for archive in archives[:6]:
-        archive_brief = getv(archive, "brief", None)
-        paste_panel(img, (44, y, 856, y + 140), radius=18, fill=(255, 255, 255, 220))
-        draw = ImageDraw.Draw(img)
-        title = str(getv(getv(archive_brief, "division", None), "name_with_num", getv(archive, "archive_type", "存档")))
-        text_fit(draw, (72, y + 24), title, 28, FIRST, 420)
-        draw.text((72, y + 72), f"硬币 {getv(archive_brief, 'total_coin', 0)} · 剩余HP {getv(archive_brief, 'remain_hp', 0)} · 阵容价值 {getv(archive_brief, 'lineup_coin', 0)}", font=get_font(22), fill=SECOND)
-        draw.text((832, y + 28), str(getv(archive_brief, "archive_time", "")), font=get_font(18), fill=MUTED, anchor="ra")
         y += 170
     return convert_img(img)
 

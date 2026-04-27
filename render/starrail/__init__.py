@@ -6,13 +6,13 @@ from .endgame import (
     render_pure_fiction,
 )
 from .extras import (
-    render_grid_fight_card,
     render_monthly_award,
     render_role_index_card,
     render_rogue_card,
     render_rogue_locust_card,
     render_sign_card,
 )
+from .grid_fight import render_grid_fight_card
 from .gacha import render_starrail_gacha_card
 from .notes import render_starrail_notes
 
